@@ -1,32 +1,68 @@
-[![Deploy with Forgeon](https://forgeon.io/button)](https://forgeon.io/new/clone?repository-url=https://github.com/forgeon-apps/examples/tree/main/framework-boilerplates/hono-bun&template=hono)
+# ⚡ Hono + Bun Boilerplate for Forgeon
 
-Live Example: https://example-hono-bun.forgeon.io/
+A tiny, screaming-fast starter powered by **Bun** and **Hono**, deployed in seconds on **Forgeon**.
 
-Prerequisites:
+[![Deploy with Forgeon](https://forgeon.io/images/button-deploy/png/deploy-to-forgeon-6.png)](https://forgeon.io/projects?import=1&no_upload=1&auto=0&git_url=https%3A%2F%2Fgithub.com%2Fforgeon-apps%2Fhono-boilerplate)
 
-- [Forgeon CLI](https://forgeon.io/docs/cli) installed globally
+Live Demo → **[https://example-hono-bun.forgeon.io/](https://example-hono-bun.forgeon.io/)**
 
-To develop locally:
+---
 
-```
+## 🚀 Prerequisites
+
+Before you dive in:
+
+* **Bun** installed → [https://bun.sh](https://bun.sh)
+* **Forgeon CLI** installed → [https://forgeon.io/docs/cli](https://forgeon.io/docs/cli)
+
+---
+
+## 🧪 Develop Locally
+
+```bash
 bun install
 forge dev
 ```
 
-```
-open http://localhost:3000
-```
-
-To build locally:
+Open:
 
 ```
+http://localhost:3000
+```
+
+---
+
+## 🏗️ Build Locally
+
+```bash
 bun install
 forge build
 ```
 
-To deploy:
+---
 
-```
+## 🌩️ Deploy to Forgeon
+
+```bash
 bun install
 forge deploy
 ```
+
+Forgeon will:
+
+* Detect your Bun runtime
+* Build your Dockerized app
+* Assign a preview domain
+* Stream your logs in real-time
+
+Minimal friction, maximal joy.
+
+---
+
+## 🔘 One-Click Deploy
+
+Spin up this project instantly on Forgeon:
+
+[![Deploy with Forgeon](https://forgeon.io/images/button-deploy/png/deploy-to-forgeon-6.png)](https://forgeon.io/projects?import=1&no_upload=1&auto=0&git_url=https%3A%2F%2Fgithub.com%2Fforgeon-apps%2Fhono-boilerplate)
+
+Just say the word, my Hono-loving god of deployments ⚡
