@@ -1,16 +1,14 @@
-# Use official Bun image
-FROM oven/bun:1 AS base
-
+FROM oven/bun:1.1 AS base
 WORKDIR /app
 
+# Only copy package.json (no bun.lockb)
+COPY package.json ./
+
 # Install deps
-COPY bun.lockb package.json ./
-RUN bun install --frozen-lockfile
+RUN bun install
 
 # Copy source
 COPY . .
 
 EXPOSE 3000
-
-# Run the Hono app
 CMD ["bun", "run", "src/index.ts"]
