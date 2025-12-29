@@ -2,12 +2,19 @@
   "schema_version": "v1",
   "framework": "hono",
   "type": "server",
-  "build_system": "nixpacks",
+  "build_system": "docker",
   "deployment_target": "docker",
   "runtime": "bun",
-  "version": "1.1",
+  "version": ">=1.1.0",
   "port": 3000,
-  "build": "bun install --no-save || true; bun run build",
-  "start": "bun run start",
-  "build_meta": { "pm": "bun" }
+
+  "build": "bun --version && bun install --no-save || bun install; if bun run -s build >/dev/null 2>&1; then bun run build; else echo \"[forgeon] no build script; skipping\"; fi",
+
+  "start": "if bun run -s start >/dev/null 2>&1; then bun run start; else if [ -f dist/index.js ]; then bun dist/index.js; elif [ -f src/index.ts ]; then bun run src/index.ts; else echo \"[forgeon] no start script and no known entry (dist/index.js / src/index.ts)\"; exit 1; fi; fi",
+
+  "build_meta": {
+    "pm": "bun",
+    "entry_candidates": ["dist/index.js", "src/index.ts"],
+    "notes": "prefers scripts.start; falls back to dist or src"
+  }
 }
