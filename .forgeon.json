@@ -3,7 +3,7 @@
   "framework": "hono",
   "type": "server",
 
-  "build_system": "buildpack",
+  "build_system": "buildpacks",
   "deployment_target": "docker",
 
   "runtime": "bun",
@@ -13,6 +13,6 @@
 
   "build_meta": {
     "pm": "bun",
-    "notes": "Requires Forgeon Bun buildpack support. Buildpacks should use package.json scripts; avoid complex shell fallbacks here."
+    "notes": "Requires Forgeon Bun buildpacks support. Buildpacks should use package.json scripts; avoid complex shell fallbacks here."
   }
 }
