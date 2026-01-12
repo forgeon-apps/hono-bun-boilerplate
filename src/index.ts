@@ -338,7 +338,7 @@ app.get('/v1', (c) => {
 
 // ───────────────── BUN SERVER ─────────────────
 
-const PORT = Number(process.env.PORT || '3000')
+const PORT = Number(process.env.PORT || '3700')
 
 const server = Bun.serve({
   port: PORT,
