@@ -12,11 +12,9 @@
   "port": 3700,
 
   "build_meta": {
-    "builder": "forgeon/builder-bun:jammy",
+  "builder": "localhost:5050/forgeon/builder-bun:jammy",
     "buildpacks": [
-      "forgeon/buildpack-bun",
-      "forgeon/buildpack-bun-deps",
-      "forgeon/buildpack-bun-scripts"
+      "localhost:5050/forgeon/buildpack-bun:0.0.1"
     ],
     "env": {
       "BUN_VERSION": "1.1.0",
