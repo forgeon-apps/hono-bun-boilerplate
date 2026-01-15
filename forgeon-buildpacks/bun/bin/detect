@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# CNB detect runs with working directory = app dir
+
+if [[ -f "bun.lockb" || -f "bun.lock" || -f "bunfig.toml" ]]; then
+  exit 0
+fi
+
+if [[ -f "package.json" ]] && grep -Eq '"packageManager"\s*:\s*"bun@' "package.json"; then
+  exit 0
+fi
+
+exit 100
