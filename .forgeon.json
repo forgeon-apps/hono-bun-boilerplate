@@ -3,7 +3,7 @@
   "framework": "hono",
   "type": "server",
 
-  "build_system": "nixpacks",
+  "build_system": "buildpacks",
   "deployment_target": "docker",
 
   "runtime": "bun",
@@ -12,7 +12,18 @@
   "port": 3700,
 
   "build_meta": {
-    "pm": "bun",
-    "notes": "Requires Forgeon Bun nixpacks support. Nixpacks should use package.json scripts; avoid complex shell fallbacks here."
+    "builder": "forgeon/builder-bun:jammy",
+    "buildpacks": [
+      "forgeon/buildpack-bun",
+      "forgeon/buildpack-bun-deps",
+      "forgeon/buildpack-bun-scripts"
+    ],
+    "env": {
+      "BUN_VERSION": "1.1.0",
+      "BUN_INSTALL_FLAGS": "--frozen-lockfile",
+      "BUN_BUILD_SCRIPT": "build",
+      "BUN_START_SCRIPT": "start"
+    },
+    "notes": "Bun CNB chain: install bun -> bun install -> bun run build -> launch bun run start."
   }
 }
