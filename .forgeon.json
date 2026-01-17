@@ -13,7 +13,7 @@
 
   "build_meta": {
     "builder": "localhost:5050/forgeon/builder-bun:jammy",
-    "buildpacks": ["forgeon/buildpack-bun"],
+    "buildpacks": ["localhost:5050/forgeon/buildpack-bun:0.0.2"],
     "env": {
       "BP_BUN_VERSION": "1.1.0",
       "BP_BUN_INSTALL_FLAGS": "--frozen-lockfile",
