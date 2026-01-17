@@ -218,13 +218,16 @@ write_launch_metadata() {
   local script; script="$(pick_start_script)"
 
   # ✅ Process metadata (what fixes your error)
-  cat > "${layer_dir}/launch.toml" <<EOF
+  # Processes must live at: <layers>/launch.toml  ✅
+  # Append-safe: won’t break future multi-buildpack chains
+  cat >> "${layers_dir}/launch.toml" <<EOF
 [[processes]]
 type = "${proc_type}"
 command = "bun"
 args = ["run", "${script}"]
 default = true
 EOF
+
 
   # ✅ exec.d fallback (extra compatibility)
   mkdir -p "${layer_dir}/exec.d"
