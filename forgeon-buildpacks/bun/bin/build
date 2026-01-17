@@ -11,11 +11,11 @@ layer_dir="${layers_dir}/${layer_name}"
 mkdir -p "${layer_dir}/bin"
 
 # ----------------------------
-# Config
+# Config (BP_* envs)
 # ----------------------------
 BUN_VERSION="${BP_BUN_VERSION:-1.1.0}"
 
-# Auto-detect arch (override by setting BP_BUN_DIST if you really want)
+# Auto-detect arch (override by BP_BUN_DIST)
 if [[ -n "${BP_BUN_DIST:-}" ]]; then
   BUN_DIST="${BP_BUN_DIST}"
 else
@@ -27,8 +27,7 @@ else
   esac
 fi
 
-# If we’re x64 but AVX2 is missing, use Bun baseline build to avoid illegal instruction. :contentReference[oaicite:2]{index=2}
-# (Common in emulation / restricted CPU feature sets.)
+# If we’re x64 but AVX2 is missing, use Bun baseline build to avoid illegal instruction.
 if [[ "$BUN_DIST" == "linux-x64" ]]; then
   if [[ -r /proc/cpuinfo ]]; then
     if ! grep -qE '(^|[[:space:]])avx2([[:space:]]|$)' /proc/cpuinfo; then
@@ -36,7 +35,6 @@ if [[ "$BUN_DIST" == "linux-x64" ]]; then
       BUN_DIST="linux-x64-baseline"
     fi
   else
-    # If we can’t read cpu flags, baseline is the safer default for compatibility. :contentReference[oaicite:3]{index=3}
     log "Cannot read /proc/cpuinfo; switching to linux-x64-baseline for safety."
     BUN_DIST="linux-x64-baseline"
   fi
@@ -45,17 +43,18 @@ fi
 bun_bin="${layer_dir}/bin/bun"
 
 # ----------------------------
-# Mark layer types
+# Mark layer types (IMPORTANT)
 # ----------------------------
+# ✅ launch=true is REQUIRED so launch.toml + bun binary participate in final image launch metadata.
 cat > "${layers_dir}/${layer_name}.toml" <<'EOF'
 [types]
 build = true
-launch = false
+launch = true
 cache = true
 EOF
 
 # ----------------------------
-# Safe temp dir handling (no EXIT trap with unbound vars)
+# Safe temp dir handling
 # ----------------------------
 TMP_DIR=""
 cleanup_tmp() {
@@ -108,7 +107,7 @@ npm_pkg_for_dist() {
   local dist="$1"
   case "$dist" in
     linux-x64)           echo "@oven/bun-linux-x64" ;;
-    linux-x64-baseline)  echo "@oven/bun-linux-x64-baseline" ;; # baseline build exists on npm :contentReference[oaicite:4]{index=4}
+    linux-x64-baseline)  echo "@oven/bun-linux-x64-baseline" ;;
     linux-aarch64)       echo "@oven/bun-linux-aarch64" ;;
     *) return 1 ;;
   esac
@@ -134,13 +133,9 @@ install_bun() {
   log "Installing Bun ${BUN_VERSION} (${BUN_DIST})..."
 
   TMP_DIR="$(mktemp -d)"
-  # ensure temp gets cleaned even if install fails
-  # (manual cleanup, not EXIT trap)
   local tmp="${TMP_DIR}"
 
-  # ----------------------------
-  # 1) Try GitHub ZIP (fast path if we can extract ZIP)
-  # ----------------------------
+  # 1) GitHub ZIP
   local url_zip="https://github.com/oven-sh/bun/releases/download/bun-v${BUN_VERSION}/bun-${BUN_DIST}.zip"
   log "Trying GitHub ZIP: ${url_zip}"
 
@@ -162,18 +157,16 @@ install_bun() {
     log "GitHub ZIP download failed; will try npm fallback."
   fi
 
-  # ----------------------------
-  # 2) npm TGZ fallback (tar only)
-  # ----------------------------
+  # 2) npm TGZ fallback
   local pkg
   pkg="$(npm_pkg_for_dist "$BUN_DIST")" || die "No npm mapping for BUN_DIST='${BUN_DIST}'"
   local url_tgz
   url_tgz="$(npm_constructed_tarball_url "$pkg" "$BUN_VERSION")"
 
   log "Trying npm tarball: ${url_tgz}"
-
-  if [[ "$(curl_status "$url_tgz")" != "200" ]]; then
-    die "npm tarball not found for ${pkg}@${BUN_VERSION} (HTTP $(curl_status "$url_tgz"))."
+  local code; code="$(curl_status "$url_tgz")"
+  if [[ "$code" != "200" ]]; then
+    die "npm tarball not found for ${pkg}@${BUN_VERSION} (HTTP ${code})."
   fi
 
   curl_download "$url_tgz" "${tmp}/bun.tgz"
@@ -181,9 +174,7 @@ install_bun() {
 
   local found
   found="$(find_bun_binary "${tmp}/bun")"
-  if [[ -z "$found" ]]; then
-    die "npm tarball extracted but bun binary not found."
-  fi
+  [[ -n "$found" ]] || die "npm tarball extracted but bun binary not found."
 
   cp "$found" "$bun_bin"
   chmod +x "$bun_bin"
@@ -196,28 +187,54 @@ has_script() {
   [[ -f package.json ]] && grep -Eq "\"${name}\"[[:space:]]*:" package.json
 }
 
-write_launch_toml() {
-  # Decide which script to run
+pick_start_script() {
+  # Priority:
+  # 1) BP_BUN_START_SCRIPT
+  # 2) package.json scripts.start
+  # 3) package.json scripts.dev
+  # 4) "start" fallback
   local script="${BP_BUN_START_SCRIPT:-}"
+  if [[ -n "$script" ]]; then
+    echo "$script"
+    return 0
+  fi
 
-  if [[ -z "$script" && -f package.json ]]; then
+  if [[ -f package.json ]]; then
     if grep -Eq '"start"[[:space:]]*:' package.json; then
-      script="start"
-    elif grep -Eq '"dev"[[:space:]]*:' package.json; then
-      script="dev"
-    else
-      script="start" # fallback: still standard for most apps
+      echo "start"
+      return 0
+    fi
+    if grep -Eq '"dev"[[:space:]]*:' package.json; then
+      echo "dev"
+      return 0
     fi
   fi
 
-  # Processes must live at: <layers>/<layer>/launch.toml
+  echo "start"
+}
+
+write_launch_metadata() {
+  local proc_type="${BP_BUN_PROCESS_TYPE:-web}"
+  local script; script="$(pick_start_script)"
+
+  # ✅ Process metadata (what fixes your error)
   cat > "${layer_dir}/launch.toml" <<EOF
 [[processes]]
-type = "web"
+type = "${proc_type}"
 command = "bun"
 args = ["run", "${script}"]
 default = true
 EOF
+
+  # ✅ exec.d fallback (extra compatibility)
+  mkdir -p "${layer_dir}/exec.d"
+  cat > "${layer_dir}/exec.d/${proc_type}" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+: "\${PORT:=3000}"
+exec bun run "${script}"
+EOF
+  chmod +x "${layer_dir}/exec.d/${proc_type}"
 }
 
 # ----------------------------
@@ -225,11 +242,11 @@ EOF
 # ----------------------------
 install_bun
 
-# CNB runs build with working directory already at app root.
 if [[ -f "package.json" ]]; then
   log "Running bun install..."
 
-  # If bun still throws Illegal instruction here, the CPU is below Bun's baseline requirement (SSE4.2). :contentReference[oaicite:5]{index=5}
+  # allow flags like: "--frozen-lockfile --no-cache"
+  # shellcheck disable=SC2206
   install_flags=(${BP_BUN_INSTALL_FLAGS:-})
 
   if [[ -f "bun.lockb" || -f "bun.lock" ]]; then
@@ -238,17 +255,21 @@ if [[ -f "package.json" ]]; then
     "${bun_bin}" install --frozen-lockfile "${install_flags[@]}"
     rc=$?
     set -e
-
     if [[ $rc -ne 0 ]]; then
-      log "Frozen install failed (lockfile mismatch). Retrying non-frozen install..."
+      log "Frozen install failed; retrying non-frozen install..."
       "${bun_bin}" install "${install_flags[@]}"
     fi
   else
     "${bun_bin}" install "${install_flags[@]}"
   fi
 
-  if has_script "build"; then
-    log "Running bun run build..."
+  # build script override support
+  build_script="${BP_BUN_BUILD_SCRIPT:-}"
+  if [[ -n "$build_script" ]]; then
+    log "BP_BUN_BUILD_SCRIPT set → bun run ${build_script}"
+    "${bun_bin}" run "${build_script}"
+  elif has_script "build"; then
+    log "Detected build script → bun run build"
     "${bun_bin}" run build
   else
     log "No build script found; skipping build."
@@ -257,5 +278,5 @@ else
   log "No package.json found; skipping install/build."
 fi
 
-write_launch_toml
+write_launch_metadata
 log "✅ Bun buildpack complete."
