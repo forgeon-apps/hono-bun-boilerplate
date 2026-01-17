@@ -12,16 +12,14 @@
   "port": 3700,
 
   "build_meta": {
-  "builder": "localhost:5050/forgeon/builder-bun:jammy",
-    "buildpacks": [
-      "localhost:5050/forgeon/buildpack-bun:0.0.1"
-    ],
+    "builder": "localhost:5050/forgeon/builder-bun:jammy",
+    "buildpacks": ["forgeon/buildpack-bun"],
     "env": {
-      "BUN_VERSION": "1.1.0",
-      "BUN_INSTALL_FLAGS": "--frozen-lockfile",
-      "BUN_BUILD_SCRIPT": "build",
-      "BUN_START_SCRIPT": "start"
+      "BP_BUN_VERSION": "1.1.0",
+      "BP_BUN_INSTALL_FLAGS": "--frozen-lockfile",
+      "BP_BUN_START_SCRIPT": "start",
+      "BP_BUN_PROCESS_TYPE": "web"
     },
-    "notes": "Bun CNB chain: install bun -> bun install -> bun run build -> launch bun run start."
+    "notes": "Bun CNB: install bun -> bun install -> bun run build -> launch bun run start."
   }
 }

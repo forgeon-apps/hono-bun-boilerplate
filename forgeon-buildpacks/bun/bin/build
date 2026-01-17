@@ -50,7 +50,7 @@ bun_bin="${layer_dir}/bin/bun"
 cat > "${layers_dir}/${layer_name}.toml" <<'EOF'
 [types]
 build = true
-launch = true
+launch = false
 cache = true
 EOF
 
@@ -197,12 +197,25 @@ has_script() {
 }
 
 write_launch_toml() {
+  # Decide which script to run
+  local script="${BP_BUN_START_SCRIPT:-}"
+
+  if [[ -z "$script" && -f package.json ]]; then
+    if grep -Eq '"start"[[:space:]]*:' package.json; then
+      script="start"
+    elif grep -Eq '"dev"[[:space:]]*:' package.json; then
+      script="dev"
+    else
+      script="start" # fallback: still standard for most apps
+    fi
+  fi
+
   # Processes must live at: <layers>/<layer>/launch.toml
   cat > "${layer_dir}/launch.toml" <<EOF
 [[processes]]
 type = "web"
-command = ["bun"]
-args = ["run", "${BP_BUN_START_SCRIPT:-start}"]
+command = "bun"
+args = ["run", "${script}"]
 default = true
 EOF
 }
