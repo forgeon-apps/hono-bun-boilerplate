@@ -223,7 +223,7 @@ write_launch_metadata() {
   cat >> "${layers_dir}/launch.toml" <<EOF
 [[processes]]
 type = "${proc_type}"
-command = "bun"
+command = ["bun"]
 args = ["run", "${script}"]
 default = true
 EOF
