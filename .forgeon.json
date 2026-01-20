@@ -12,7 +12,7 @@
   "port": 3700,
 
   "build_meta": {
-    "builder": "localhost:5050/forgeon/builder-bun-jammy",
+    "builder": "localhost:5050/forgeon/builder-bun-jammy:jammy-0.0.3",
     "buildpacks": ["localhost:5050/forgeon/buildpack-bun:0.0.3"],
     "env": {
       "BP_BUN_VERSION": "1.1.0",
